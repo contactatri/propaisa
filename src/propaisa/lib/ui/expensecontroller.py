@@ -18,7 +18,25 @@ class ExpenseController:
         self.label_Pack = Pack(color="black", font_size=12, font_weight="bold")
         self.input_Pack = Pack(color="black", font_size=12, font_weight="bold", flex=1)
         self.widget_Pack=Pack(width=20, height=20, padding_right=5)
-    
+    def clear_table_action(self, widget):
+        print(f"Action initiated: {widget.text} button pressed")
+    def create_new_income_action(self, widget):
+        print(f"Action initiated: {widget.text} button pressed")
+        self.app.main_box.clear()
+        self.app.main_box.add(self.app.get_header_box())
+        #Create New Income Object
+        self.app.main_box.add(self.get_enter_income_box())
+        self.app.main_window.content = self.app.main_box
+        self.app.main_window.show()
+    def create_new_expense_action(self, widget):
+        print(f"Action initiated: {widget.text} button pressed")
+        self.app.main_box.clear()
+        self.app.main_box.add(self.app.get_header_box())
+        #Create New Expense Object
+        expense_object = Expense()
+        self.app.main_box.add(self.get_expense_box(expense_object))
+        self.app.main_window.content = self.app.main_box
+        self.app.main_window.show()
     def on_select_handler(self, widget):
         selected_row = widget.selection
         if selected_row:
@@ -89,13 +107,20 @@ class ExpenseController:
         body_box.add(due_date_input_label_with_icon_box)
         ##########################################
         ##########################################
-        button = toga.Button(
+        button_save = toga.Button(
             "Enter Income",
             #on_press=partial(self.update_action,amount_input.value,saved_amount_input.value,settled_amount_input.value),
             on_press=lambda *args: self.income_action(amount_input.value, date_input.value),
             margin=5,
         )
-        body_box.add(button)
+        body_box.add(button_save)
+        button_cancel = toga.Button(
+            "Cancel",
+            #on_press=partial(self.update_action,amount_input.value,saved_amount_input.value,settled_amount_input.value),
+            on_press=lambda *args: self.cancel_action(),
+            margin=5,
+        )
+        body_box.add(button_cancel)
         return body_box
 
     def get_expense_list_box (self):
@@ -108,10 +133,10 @@ class ExpenseController:
         for expense in expense_manager.expenses:
             expense_tuple=(expense.name, expense.amount, expense.savedamount, expense.settledamount, expense.gapamount, expense.daily_saving_amount, expense.projected_yearly_interest, expense.duedate, expense.id)
             expense_data.append(expense_tuple)
-        expense_tuple=("Create New Expense", 0, 0, 0, 0, 0, 0, str(datetime.now()), -1)
-        income_tuple=("Create New Income", 0, 0, 0, 0, 0, 0, str(datetime.now()), -2)
-        expense_data.append(expense_tuple)
-        expense_data.append(income_tuple)
+        #expense_tuple=("Create New Expense", 0, 0, 0, 0, 0, 0, str(datetime.now()), -1)
+        #income_tuple=("Create New Income", 0, 0, 0, 0, 0, 0, str(datetime.now()), -2)
+        #expense_data.append(expense_tuple)
+        #expense_data.append(income_tuple)
         #content_box = toga.Box(style=Pack(direction=COLUMN))
         table = toga.Table(
             headings=['Name', 'Amount', 'Saved Amount', 'Settled Amount', 'Gap Amount', 'Daily Saving Amount', 'Projected Yearly Interest', 'Due Date', 'ID'],
@@ -127,14 +152,34 @@ class ExpenseController:
         #nudge_box = nudge_viewer.get_nudge_box()
         #body_box.add(nudge_box)
         body_box.add(self.get_expense_list_box())
-        empty_box = toga.Box(style=Pack(height=5))
+        controls_box = toga.Box(style=Pack(height=5))
         scroll_container = toga.ScrollContainer(
-            content=empty_box
+            content=controls_box
             ,style=Pack(flex=1,direction=COLUMN)
             ,horizontal=False
             , vertical=True
         )
-
+        button_clear_table = toga.Button(
+            "Clear Table",
+            #on_press=partial(self.toga_helper.show_alert, message_str="Hello from helper"),
+            on_press=partial(self.clear_table_action),
+            margin=5,
+        )
+        button_add_new_expense = toga.Button(
+            "Add New Expense",
+            #on_press=partial(self.toga_helper.show_alert, message_str="Hello from helper"),
+            on_press=partial(self.create_new_expense_action),
+            margin=5,
+        )
+        button_add_new_income = toga.Button(
+            "Add New Income",
+            #on_press=partial(self.toga_helper.show_alert, message_str="Hello from helper"),
+            on_press=partial(self.create_new_income_action),
+            margin=5,
+        )
+        controls_box.add(button_clear_table)
+        controls_box.add(button_add_new_expense)
+        controls_box.add(button_add_new_income)
         body_box.add(scroll_container)
         return body_box
     def get_expense_box(self, expense:Expense=None):
@@ -278,13 +323,20 @@ class ExpenseController:
             due_date_input_label_with_icon_box.add(date_input)
             expense_box.add(due_date_input_label_with_icon_box)
             ##########################################
-            button = toga.Button(
+            button_save = toga.Button(
                 "Update Expense",
                 #on_press=partial(self.update_action,amount_input.value,saved_amount_input.value,settled_amount_input.value),
                 on_press=lambda *args: self.update_action(expense.id, expense.name,amount_input.value,saved_amount_input.value,settled_amount_input.value, expense.duedate),
                 margin=5,
             )
-            expense_box.add(button)
+            expense_box.add(button_save)
+            button_cancel = toga.Button(
+                "Cancel",
+                #on_press=partial(self.update_action,amount_input.value,saved_amount_input.value,settled_amount_input.value),
+                on_press=lambda *args: self.cancel_action(),
+                margin=5,
+            )
+            expense_box.add(button_cancel)
             return expense_box
         except Exception as e:
             # This block catches all standard exceptions and stores the error in 'e'
@@ -312,6 +364,17 @@ class ExpenseController:
                 duedate=self.new_due_date
             )
             expense_manager.update_expense(new_expense)
+            self.app.main_box.clear()
+            self.app.main_box.add(self.app.get_header_box())    
+            self.app.main_box.add(self.expense_dashboard_screen())
+            self.app.main_window.content = self.app.main_box    
+            self.app.main_window.show()
+            
+        except Exception as e:
+            # This block catches all standard exceptions and stores the error in 'e'
+            print(f"An exception of type {type(e).__name__} occurred: {e}")
+    def cancel_action(self):
+        try:
             self.app.main_box.clear()
             self.app.main_box.add(self.app.get_header_box())    
             self.app.main_box.add(self.expense_dashboard_screen())
