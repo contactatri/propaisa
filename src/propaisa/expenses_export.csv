@@ -1,0 +1,15 @@
+id,name,amount,savedamount,settledamount,gapamount,daily_saving_amount,projected_yearly_interest,duedate,userid,categoryid,frequencyid,status,due_days,nudges
+71,internet feb 26,1220,520,40,660,0,158,2026-02-26,1,1,1,0,0,[<lib.entity.expense.Nudge object at 0x000001E1F7F47650>]
+72,school fees feb 26,5500,0,5000,500,0,120,2026-02-26,1,1,1,0,0,"[<lib.entity.expense.Nudge object at 0x000001E1F7F47710>, <lib.entity.expense.Nudge object at 0x000001E1F7F47620>]"
+73,groceries feb 26,8000,0,0,8000,0,1920,2026-02-28,1,1,1,0,0,"[<lib.entity.expense.Nudge object at 0x000001E1F7F47830>, <lib.entity.expense.Nudge object at 0x000001E1F7F477D0>]"
+74,transport feb 26,3500,0,0,3500,0,840,2026-02-28,1,1,1,0,0,"[<lib.entity.expense.Nudge object at 0x000001E1F7F47950>, <lib.entity.expense.Nudge object at 0x000001E1F7F478F0>]"
+75,medicine feb 26,2800,0,0,2800,0,672,2026-02-28,1,1,1,0,0,"[<lib.entity.expense.Nudge object at 0x000001E1F7F47A70>, <lib.entity.expense.Nudge object at 0x000001E1F7F47A10>]"
+76,rent feb 26,14500,0,0,14500,0,3480,2026-02-28,1,1,1,0,0,"[<lib.entity.expense.Nudge object at 0x000001E1F7F47B90>, <lib.entity.expense.Nudge object at 0x000001E1F7F47B30>]"
+77,clothing feb 26,3800,0,0,3800,0,912,2026-02-28,1,1,1,0,0,"[<lib.entity.expense.Nudge object at 0x000001E1F7F47CB0>, <lib.entity.expense.Nudge object at 0x000001E1F7F47C50>]"
+71,internet feb 26,1220,520,40,660,0,158,2026-02-26,1,1,1,0,0,[<lib.entity.expense.Nudge object at 0x000001E1F7F47DD0>]
+72,school fees feb 26,5500,0,5000,500,0,120,2026-02-26,1,1,1,0,0,"[<lib.entity.expense.Nudge object at 0x000001E1F7F47E90>, <lib.entity.expense.Nudge object at 0x000001E1F7F47DA0>]"
+73,groceries feb 26,8000,0,0,8000,0,1920,2026-02-28,1,1,1,0,0,"[<lib.entity.expense.Nudge object at 0x000001E1F7F47F50>, <lib.entity.expense.Nudge object at 0x000001E1F7F9C050>]"
+74,transport feb 26,3500,0,0,3500,0,840,2026-02-28,1,1,1,0,0,"[<lib.entity.expense.Nudge object at 0x000001E1F7F9C110>, <lib.entity.expense.Nudge object at 0x000001E1F7F9C0B0>]"
+75,medicine feb 26,2800,0,0,2800,0,672,2026-02-28,1,1,1,0,0,"[<lib.entity.expense.Nudge object at 0x000001E1F7F9C230>, <lib.entity.expense.Nudge object at 0x000001E1F7F9C1D0>]"
+76,rent feb 26,14500,0,0,14500,0,3480,2026-02-28,1,1,1,0,0,"[<lib.entity.expense.Nudge object at 0x000001E1F7F9C350>, <lib.entity.expense.Nudge object at 0x000001E1F7F9C2F0>]"
+77,clothing feb 26,3800,0,0,3800,0,912,2026-02-28,1,1,1,0,0,"[<lib.entity.expense.Nudge object at 0x000001E1F7F9C470>, <lib.entity.expense.Nudge object at 0x000001E1F7F9C410>]"

@@ -46,7 +46,7 @@ class propaisa(toga.App):
         self.main_box.add(self.header_box)
         
         '''
-        #
+        
         
         self.main_box = toga.Box(style=Pack(direction=COLUMN, flex=1))
         self.main_box.add(self.login_controller.pre_login_screen())
@@ -65,6 +65,7 @@ class propaisa(toga.App):
         return header_box
     def say_hello(self, widget):
         print(f"Hello, {self.name_input.value}")
+    
     
 def main():
     return propaisa()

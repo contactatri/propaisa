@@ -21,7 +21,29 @@ class ExpenseManager:
         self.userid = userid  # For demo purpose, assuming single user with userid = 1
         self.expenses = []
         self.get_expenses()
-        
+    def get_expenses_as_dataframe(self) -> pd.DataFrame:
+        try:
+            # Connect to the database and use the connection as a context manager
+            with SQLiteManager(self.db_file) as db:
+                query = "SELECT id,name,amount,savedamount,settledamount,duedate,userid,categoryid,frequencyid,status FROM user_expense WHERE userid = ?"
+                rows = db.fetch_all(query, (self.userid,))
+                # Define the format string matching the SQLite string format
+                format_string = '%Y-%m-%d %H:%M:%S'
+                if rows:                
+                    for row in rows:
+                        expense = Expense(row[0], row[1], row[2], row[3], row[4], datetime.strptime(row[5], format_string), row[6], row[7], row[8], row[9])
+                        self.expenses.append(expense)
+                    # Using map() with a lambda function
+                    expense_list_map = list(map(lambda expense_obj: f"{expense_obj.id} |{expense_obj.name} | {str(expense_obj.amount)} | {str(expense_obj.savedamount)} | {str(expense_obj.settledamount)} | {str(expense_obj.status)} | {str(expense_obj.duedate)}", self.expenses))
+                    #print(f"User_Expenses: {expense_list_map}")
+                else:
+                    print(f"No records found.")
+            # Convert list of Expense objects to a DataFrame
+            df = pd.DataFrame([vars(expense) for expense in self.expenses])
+            return df
+        except sqlite3.Error as e:
+            print(f"A database error occurred: {e}")
+            return pd.DataFrame()  # Return an empty DataFrame in case of error
     def get_expenses(self) -> List[Expense]:
         try:
             # Connect to the database and use the connection as a context manager

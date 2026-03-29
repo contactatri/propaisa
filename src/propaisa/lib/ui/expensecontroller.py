@@ -122,7 +122,17 @@ class ExpenseController:
         )
         body_box.add(button_cancel)
         return body_box
-
+    def export_expense_list(self):
+        expense_manager = ExpenseManager(f"{self.script_dir}/propaisa.db",self.userid)
+        dataframe_expenses = expense_manager.get_expenses_as_dataframe()
+        dataframe_expenses.to_csv(f"{self.script_dir}/expenses_export.csv", index=False)
+        '''
+        with open(f"{self.script_dir}/expenses_export.csv", "w") as file:
+            file.write("ID,Name,Amount,Saved Amount,Settled Amount,Gap Amount,Daily Saving Amount,Projected Yearly Interest,Due Date\n")
+            for expense in expense_manager.expenses:
+                file.write(f"{expense.id},{expense.name},{expense.amount},{expense.savedamount},{expense.settledamount},{expense.gapamount},{expense.daily_saving_amount},{expense.projected_yearly_interest},{expense.duedate}\n")
+        '''
+        #self.app.main_window.info_dialog("Export Successful", f"Expenses have been exported to {self.script_dir}/expenses_export.csv")
     def get_expense_list_box (self):
         #expense_list_box=toga.Box(style=Pack(flex=1,direction=COLUMN))
         expense_manager = ExpenseManager(f"{self.script_dir}/propaisa.db",self.userid)
@@ -159,12 +169,6 @@ class ExpenseController:
             ,horizontal=False
             , vertical=True
         )
-        button_clear_table = toga.Button(
-            "Clear Table",
-            #on_press=partial(self.toga_helper.show_alert, message_str="Hello from helper"),
-            on_press=partial(self.clear_table_action),
-            margin=5,
-        )
         button_add_new_expense = toga.Button(
             "Add New Expense",
             #on_press=partial(self.toga_helper.show_alert, message_str="Hello from helper"),
@@ -177,7 +181,6 @@ class ExpenseController:
             on_press=partial(self.create_new_income_action),
             margin=5,
         )
-        controls_box.add(button_clear_table)
         controls_box.add(button_add_new_expense)
         controls_box.add(button_add_new_income)
         body_box.add(scroll_container)

@@ -65,3 +65,19 @@ class Expense:
                 nudge=Nudge(0, f"Nudge for {self.name}", pd.Timestamp.now().to_pydatetime(), nudge_message, "High Interest Nudge",1, 0)
                 self.nudges.append(nudge)
         return 0
+    def to_dictionary(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "amount": self.amount,
+            "savedamount": self.savedamount,
+            "settledamount": self.settledamount,
+            "gapamount": self.gapamount,
+            "daily_saving_amount": self.daily_saving_amount,
+            "projected_yearly_interest": self.projected_yearly_interest,
+            "duedate": self.duedate.strftime('%Y-%m-%d %H:%M:%S'),
+            "userid": self.userid,
+            "categoryid": self.categoryid,
+            "frequencyid": self.frequencyid,
+            "status": self.status
+        }
