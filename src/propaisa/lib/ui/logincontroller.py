@@ -1,4 +1,5 @@
 from functools import partial
+import traceback
 import toga
 from toga.style import Pack
 from toga.style.pack import COLUMN, ROW
@@ -84,10 +85,34 @@ class LoginController:
         self.app.main_window.content = self.app.main_box
         self.app.main_window.show()
     def menu_clear_expenses_handler(self, sender, **kwargs):
-        self.main_window.info_dialog("Action", "Clear Expenses menu item was clicked!")
+        try:
+            expense_controller = ExpenseController(self.app, self.app.userid, self.app.script_dir, self.app.icons_dir)
+            expense_controller.clear_table("user_expense")
+            self.app.main_window.info_dialog("Action", "Clear Expenses executed suvccessfully!")
+        except Exception as e:
+            print("--- Full Traceback ---")
+            traceback.print_exc() 
+            print("----------------------")
+            self.app.main_window.error_dialog("Error", f"An error occurred while clearing expenses: {e}")
     def menu_export_expenses_handler(self, sender, **kwargs):
-        self.app.main_window.info_dialog("Action", "Export Expenses menu item was clicked!")
-        expense_controller = ExpenseController(self.app, self.app.userid, self.app.script_dir, self.app.icons_dir)
-        expense_controller.export_expense_list()
+        try:
+            expense_controller = ExpenseController(self.app, self.app.userid, self.app.script_dir, self.app.icons_dir)
+            expense_controller.export_expense_list()
+            self.app.main_window.info_dialog("Action", "Export Expenses successful!")
+        except Exception as e:
+            print("--- Full Traceback ---")
+            traceback.print_exc()
+            print("----------------------")
+            self.app.main_window.error_dialog("Error", f"An error occurred while exporting expenses: {e}")
+    def menu_import_expenses_handler(self, sender, **kwargs):
+        try:
+            expense_controller = ExpenseController(self.app, self.app.userid, self.app.script_dir, self.app.icons_dir)
+            expense_controller.import_expense_list("expenses_import.xlsx")
+            self.app.main_window.info_dialog("Action", "Import Expenses succesful!")
+        except Exception as e:
+            print("--- Full Traceback ---")
+            traceback.print_exc()
+            print("----------------------")
+            self.app.main_window.error_dialog("Error", f"An error occurred while importing expenses: {e}")
     def menu_visualization_handler(self, sender, **kwargs):
-        self.main_window.info_dialog("Action", "Visualization menu item was clicked!")
+        self.app.main_window.info_dialog("Action", "Visualization menu item was clicked!")

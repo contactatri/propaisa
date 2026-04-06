@@ -7,17 +7,20 @@ from toga.style.pack import COLUMN, ROW
 from lib.ui.togahelper import TogaHelper
 from lib.entity.expense import Expense, Nudge
 from lib.entity.expense_manager import ExpenseManager
+from lib.entity.expense_category import ExpenseCategoryManager
 from lib.ui.nudgeviewer import NudgeViewer
 class ExpenseController:
     
     def __init__(self, app,userid, script_dir, icons_dir):
         self.app = app
+        #self.expense_category_manager = ExpenseCategoryManager(f"{script_dir}/propaisa.db")
         self.userid = userid
         self.script_dir = script_dir
         self.icons_dir = icons_dir
         self.label_Pack = Pack(color="black", font_size=12, font_weight="bold")
         self.input_Pack = Pack(color="black", font_size=12, font_weight="bold", flex=1)
         self.widget_Pack=Pack(width=20, height=20, padding_right=5)
+        self.new_due_date=None
     def clear_table_action(self, widget):
         print(f"Action initiated: {widget.text} button pressed")
     def create_new_income_action(self, widget):
@@ -123,16 +126,29 @@ class ExpenseController:
         body_box.add(button_cancel)
         return body_box
     def export_expense_list(self):
-        expense_manager = ExpenseManager(f"{self.script_dir}/propaisa.db",self.userid)
-        dataframe_expenses = expense_manager.get_expenses_as_dataframe()
-        dataframe_expenses.to_csv(f"{self.script_dir}/expenses_export.csv", index=False)
-        '''
-        with open(f"{self.script_dir}/expenses_export.csv", "w") as file:
-            file.write("ID,Name,Amount,Saved Amount,Settled Amount,Gap Amount,Daily Saving Amount,Projected Yearly Interest,Due Date\n")
-            for expense in expense_manager.expenses:
-                file.write(f"{expense.id},{expense.name},{expense.amount},{expense.savedamount},{expense.settledamount},{expense.gapamount},{expense.daily_saving_amount},{expense.projected_yearly_interest},{expense.duedate}\n")
-        '''
-        #self.app.main_window.info_dialog("Export Successful", f"Expenses have been exported to {self.script_dir}/expenses_export.csv")
+        try:
+            expense_manager = ExpenseManager(f"{self.script_dir}/propaisa.db",self.userid)
+            dataframe_expenses = expense_manager.get_expenses_as_dataframe()
+            dataframe_expenses.to_csv(f"{self.script_dir}/expenses_export.csv", index=False)
+            '''
+            with open(f"{self.script_dir}/expenses_export.csv", "w") as file:
+                file.write("ID,Name,Amount,Saved Amount,Settled Amount,Gap Amount,Daily Saving Amount,Projected Yearly Interest,Due Date\n")
+                for expense in expense_manager.expenses:
+                    file.write(f"{expense.id},{expense.name},{expense.amount},{expense.savedamount},{expense.settledamount},{expense.gapamount},{expense.daily_saving_amount},{expense.projected_yearly_interest},{expense.duedate}\n")
+            '''
+            #self.app.main_window.info_dialog("Export Successful", f"Expenses have been exported to {self.script_dir}/expenses_export.csv")
+        except Exception as e:
+            print(f"An error occurred while exporting expenses: {e}")
+            self.app.main_window.error_dialog("Export Failed", f"An error occurred while exporting expenses: {e}")
+    def import_expense_list(self, filename:str):
+        try:
+            expense_manager = ExpenseManager(f"{self.script_dir}/propaisa.db",self.userid)
+            expense_manager.upload_expense(filename)
+            self.app.main_window.info_dialog("Import Successful", f"Expenses have been imported from {self.script_dir}/{filename}")
+        except Exception as e:
+            print(f"An error occurred while importing expenses: {e}")
+            self.app.main_window.error_dialog("Import Failed", f"An error occurred while importing expenses: {e}")
+
     def get_expense_list_box (self):
         #expense_list_box=toga.Box(style=Pack(flex=1,direction=COLUMN))
         expense_manager = ExpenseManager(f"{self.script_dir}/propaisa.db",self.userid)
@@ -142,12 +158,8 @@ class ExpenseController:
         expense_data=[]
         for expense in expense_manager.expenses:
             expense_tuple=(expense.name, expense.amount, expense.savedamount, expense.settledamount, expense.gapamount, expense.daily_saving_amount, expense.projected_yearly_interest, expense.duedate, expense.id)
-            expense_data.append(expense_tuple)
-        #expense_tuple=("Create New Expense", 0, 0, 0, 0, 0, 0, str(datetime.now()), -1)
-        #income_tuple=("Create New Income", 0, 0, 0, 0, 0, 0, str(datetime.now()), -2)
-        #expense_data.append(expense_tuple)
-        #expense_data.append(income_tuple)
-        #content_box = toga.Box(style=Pack(direction=COLUMN))
+            if(expense.status == 0):
+                expense_data.append(expense_tuple)
         table = toga.Table(
             headings=['Name', 'Amount', 'Saved Amount', 'Settled Amount', 'Gap Amount', 'Daily Saving Amount', 'Projected Yearly Interest', 'Due Date', 'ID'],
             data=expense_data,
@@ -156,11 +168,33 @@ class ExpenseController:
             style=Pack(flex=1,padding=5, background_color="#fff")
         )
         return table
+    
+    def get_archived_expense_list_box (self):
+        #expense_list_box=toga.Box(style=Pack(flex=1,direction=COLUMN))
+        expense_manager = ExpenseManager(f"{self.script_dir}/propaisa.db",self.userid)
+        #expenses = expense_manager.view_expenses()
+
+        print(f"Loaded {len(expense_manager.expenses)} expenses for user ID {self.userid}")
+        expense_data=[]
+        for expense in expense_manager.expenses:
+            expense_tuple=(expense.name, expense.amount, expense.savedamount, expense.settledamount, expense.gapamount, expense.daily_saving_amount, expense.projected_yearly_interest, expense.duedate, expense.id)
+            if(expense.status == 1):
+                expense_data.append(expense_tuple)
+        table = toga.Table(
+            headings=['Name', 'Amount', 'Saved Amount', 'Settled Amount', 'Gap Amount', 'Daily Saving Amount', 'Projected Yearly Interest', 'Due Date', 'ID'],
+            data=expense_data,
+            on_select=self.on_select_handler, # Pass the handler function
+            multiple_select=False, # Set to True for multiple selections
+            style=Pack(flex=1,padding=5, background_color="#fff")
+        )
+        return table
+
     def expense_dashboard_screen (self):
         body_box=toga.Box(style=Pack(direction=COLUMN,flex=1, background_color="#fff"))
         #nudge_viewer = NudgeViewer(self.app, self.app.userid, self.app.script_dir, self.app.icons_dir)
         #nudge_box = nudge_viewer.get_nudge_box()
         #body_box.add(nudge_box)
+        body_box.add(toga.Label(f"Unsettled Expenses",margin=(0, 5), style=self.label_Pack))
         body_box.add(self.get_expense_list_box())
         controls_box = toga.Box(style=Pack(height=5))
         scroll_container = toga.ScrollContainer(
@@ -185,6 +219,24 @@ class ExpenseController:
         controls_box.add(button_add_new_income)
         body_box.add(scroll_container)
         return body_box
+    def archived_expense_dashboard_screen (self):
+        body_box=toga.Box(style=Pack(direction=COLUMN,flex=1, background_color="#fff"))
+        #nudge_viewer = NudgeViewer(self.app, self.app.userid, self.app.script_dir, self.app.icons_dir)
+        #nudge_box = nudge_viewer.get_nudge_box()
+        #body_box.add(nudge_box)
+        body_box.add(toga.Label(f"Archived Expenses",margin=(0, 5), style=self.label_Pack))
+        body_box.add(self.get_archived_expense_list_box())
+        controls_box = toga.Box(style=Pack(height=5))
+        scroll_container = toga.ScrollContainer(
+            content=controls_box
+            ,style=Pack(flex=1,direction=COLUMN)
+            ,horizontal=False
+            , vertical=True
+        )
+        
+        body_box.add(scroll_container)
+        return body_box
+
     def get_expense_box(self, expense:Expense=None):
         expense_box=toga.Box(style=Pack(direction=COLUMN,flex=1, background_color="#fff"))
         try:
@@ -326,10 +378,47 @@ class ExpenseController:
             due_date_input_label_with_icon_box.add(date_input)
             expense_box.add(due_date_input_label_with_icon_box)
             ##########################################
+            #Field Status#####################
+            status_input_label_with_icon_box = toga.Box(style=Pack(direction=ROW, alignment="center"))
+            status_input_icon_path = f"{self.icons_dir}/status.png" 
+            status_input_icon_image = toga.Image(status_input_icon_path)
+            status_input_icon_widget = toga.ImageView(image=status_input_icon_image, style=self.widget_Pack)
+            status_input_label = toga.Label(
+                f"Status",
+                margin=(0, 5),
+                style=self.label_Pack
+            )
+            status_input = toga.Switch("Paid", value=expense.status, on_change=self.on_switch_toggle)
+            status_input_label_with_icon_box.add(status_input_icon_widget)
+            status_input_label_with_icon_box.add(status_input_label)
+            status_input_label_with_icon_box.add(status_input)
+            expense_box.add(status_input_label_with_icon_box)
+            ##########################################
+            #Field Expense Category#####################
+            category_input_label_with_icon_box = toga.Box(style=Pack(direction=ROW, alignment="center"))
+            category_input_icon_path = f"{self.icons_dir}/category.png" 
+            category_input_icon_image = toga.Image(category_input_icon_path)
+            category_input_icon_widget = toga.ImageView(image=category_input_icon_image, style=self.widget_Pack)
+            category_input_label = toga.Label(
+                f"Category",
+                margin=(0, 5),
+                style=self.label_Pack
+            )
+            category_input = toga.Selection(
+                items=['1-Rent/Mortgage', '2-Utilities', '3-Groceries','4-Transportation','5-Dining Out','6-Entertainment','7-Healthcare','8-Education','9-Principle/Interest']
+                , on_change=self.on_category_switch)
+            if(expense.id!=-1):
+                category_input.value=self.get_category_display_name(expense.categoryid)
+            category_input_label_with_icon_box.add(category_input_icon_widget)
+            category_input_label_with_icon_box.add(category_input_label)
+            category_input_label_with_icon_box.add(category_input)
+            expense_box.add(category_input_label_with_icon_box)
+            ##########################################
+            
             button_save = toga.Button(
                 "Update Expense",
                 #on_press=partial(self.update_action,amount_input.value,saved_amount_input.value,settled_amount_input.value),
-                on_press=lambda *args: self.update_action(expense.id, expense.name,amount_input.value,saved_amount_input.value,settled_amount_input.value, expense.duedate),
+                on_press=lambda *args: self.update_action(expense.id, expense.name,amount_input.value,saved_amount_input.value,settled_amount_input.value, expense.duedate,category_input.value, status_input.value),
                 margin=5,
             )
             expense_box.add(button_save)
@@ -351,11 +440,19 @@ class ExpenseController:
         midnight_time = time.min # which is 00:00:00
         self.new_due_date=datetime.combine(selected_date, midnight_time)
 
-    def update_action(self, expense_id, expense_name, amt, svd_amt,stld_amnt, duedate):
+    def on_switch_toggle(self, widget):
+    # 'widget' refers to the switch that was toggled
+        print(f"Switch {widget.text} is now {'ON' if widget.value else 'OFF'}")
+    
+    def on_category_switch(self, widget):
+    # 'widget' refers to the category selection widget
+        print(f"Selected category: {widget.value}")
+
+    def update_action(self, expense_id, expense_name, amt, svd_amt,stld_amnt, duedate,category, status=0):
         try:
             expense_manager= ExpenseManager(f"{self.script_dir}/propaisa.db",self.userid)
             #Update expense object with new values from input fields
-            print(f"Updating Expense ID: {expense_id} with Amount: {amt}, Saved Amount: {svd_amt}, Settled Amount: {stld_amnt}")
+            print(f"Updating Expense ID: {expense_id} with Amount: {amt}, Saved Amount: {svd_amt}, Settled Amount: {stld_amnt}, Category: {category}, Status: {status}, Due Date: {duedate} and internal due date value: {self.new_due_date}   ")
             if(self.new_due_date==None):
                 self.new_due_date=duedate
             new_expense= Expense(
@@ -364,9 +461,14 @@ class ExpenseController:
                 amount=int(amt),
                 savedamount=int(svd_amt),
                 settledamount=int(stld_amnt),
-                duedate=self.new_due_date
+                duedate=self.new_due_date,
+                categoryid=self.get_category_code(category),
+                status= status
             )
-            expense_manager.update_expense(new_expense)
+            if(new_expense.id==-1):
+                expense_manager.create_expenses(new_expense)
+            else:
+                expense_manager.update_expense(new_expense)
             self.app.main_box.clear()
             self.app.main_box.add(self.app.get_header_box())    
             self.app.main_box.add(self.expense_dashboard_screen())
@@ -387,6 +489,33 @@ class ExpenseController:
         except Exception as e:
             # This block catches all standard exceptions and stores the error in 'e'
             print(f"An exception of type {type(e).__name__} occurred: {e}")
+    def get_category_code(self, category_name:str):
+        category_mapping = {
+            '1-Rent/Mortgage': 1,
+            '2-Utilities': 2,
+            '3-Groceries': 3,
+            '4-Transportation': 4,
+            '5-Dining Out': 5,
+            '6-Entertainment': 6,
+            '7-Healthcare': 7,
+            '8-Education': 8,
+            '9-Principle/Interest': 9
+        }
+        return category_mapping.get(category_name, None)
+    def get_category_display_name(self, category_code:int):
+        print(f"Getting display name for category code: {category_code}")
+        category_mapping = {
+            1: '1-Rent/Mortgage',
+            2: '2-Utilities',
+            3: '3-Groceries',
+            4: '4-Transportation',
+            5: '5-Dining Out',
+            6: '6-Entertainment',
+            7: '7-Healthcare',
+            8: '8-Education',
+            9: '9-Principle/Interest'
+        }
+        return category_mapping.get(category_code, None)
     
     
     

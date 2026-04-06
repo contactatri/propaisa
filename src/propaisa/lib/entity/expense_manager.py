@@ -1,5 +1,6 @@
 import sqlite3
 from datetime import datetime
+import traceback
 import pandas as pd
 from typing import Dict, Any, ClassVar
 from typing import List, Optional
@@ -48,7 +49,7 @@ class ExpenseManager:
         try:
             # Connect to the database and use the connection as a context manager
             with SQLiteManager(self.db_file) as db:
-                query = "SELECT id,name,amount,savedamount,settledamount,duedate,userid,categoryid,frequencyid,status FROM user_expense WHERE userid = ?"
+                query = "SELECT id,name,amount,savedamount,settledamount,duedate,userid,categoryid,frequencyid,status FROM user_expense WHERE userid = ? "
                 rows = db.fetch_all(query, (self.userid,))
                 # Define the format string matching the SQLite string format
                 format_string = '%Y-%m-%d %H:%M:%S'
@@ -65,6 +66,7 @@ class ExpenseManager:
         except sqlite3.Error as e:
             print(f"A database error occurred: {e}")
             return []
+    
     def view_expenses(self) :
         for expense in self.expenses:
             print("**********************************************************")
@@ -108,6 +110,7 @@ class ExpenseManager:
             print(f"A database error occurred: {e}")
     def update_expense(self, obj : Expense):
         try:
+            print(f"Updating Expense ID: {obj.id} with Amount: {obj.amount}, Saved Amount: {obj.savedamount}, Settled Amount: {obj.settledamount}, Category ID: {obj.categoryid}, Status: {obj.status}, Due Date: {obj.duedate} ")
             # Connect to the database and use the connection as a context manager
             with SQLiteManager(self.db_file) as db:
                 query = """
@@ -117,10 +120,12 @@ class ExpenseManager:
                 ,savedamount = ?
                 ,settledamount = ?
                 ,duedate = ?
+                ,categoryid = ?
+                ,status = ?
                 WHERE id = ? AND userid = ?
                 """
                 #print(f"query: {query}")
-                db.execute_query(query, (obj.amount, obj.savedamount, obj.settledamount, obj.duedate, obj.id, self.userid))
+                db.execute_query(query, (obj.amount, obj.savedamount, obj.settledamount, obj.duedate, obj.categoryid, obj.status, obj.id, self.userid))
 
         except sqlite3.Error as e:
             print(f"A database error occurred: {e}")
@@ -180,6 +185,20 @@ class ExpenseManager:
                 #print(f"Row Index: {index}, {row['name']}, {row['amount']}, {row['savedamount']}, {row['settledamount']}, {row['duedate']}, {row['userid']}, {row['categoryid']}, {row['frequencyid']}, {row['status']}")
                 expense = Expense(0, row['name'], row['amount'], row['savedamount'], row['settledamount'], row['duedate'], row['userid'], row['categoryid'], row['frequencyid'], row['status'])
                 self.create_expenses(expense)
+        except Exception as e:
+            print("--- Full Traceback ---")
+            traceback.print_exc() 
+            print("----------------------")
+    def clear_table(self, table_name: str):
+        try:
+            # Connect to the database and use the connection as a context manager
+            with SQLiteManager(self.db_file) as db:
+                query = f"DELETE FROM {table_name} WHERE userid = ?"
+                #print(f"query: {query}")
+                db.execute_query(query, (self.userid,))
+
+        except sqlite3.Error as e:
+            print(f"A database error occurred: {e}")
         except Exception as e:
             print("--- Full Traceback ---")
             traceback.print_exc() 

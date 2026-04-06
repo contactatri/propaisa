@@ -1,6 +1,6 @@
 import sqlite3
 from typing import Dict, Any, ClassVar
-from lib.sqlitemanager import SQLiteManager 
+from lib.entity.sqlitemanager import SQLiteManager  
 class ExpenseCategory:
     def __init__(self, id, name):
         self.id = id
@@ -22,7 +22,7 @@ class ExpenseCategoryManager:
                     for row in rows:
                         expense_category = ExpenseCategory(row[0], row[1])
                         self.expense_categories.append(expense_category)
-                        #print(f"Name: {expense_category.name}, Id: {expense_category.id}")
+                        print(f"Name: {expense_category.name}, Id: {expense_category.id}")
 
                 else:
                     print(f"No records found.")

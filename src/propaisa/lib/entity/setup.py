@@ -47,7 +47,7 @@ class Setup:
             );
             """
 
-
+            # Status 0 for active, 1 for completed, -1 for overdue
             user_expense_table_schema = """
             CREATE TABLE IF NOT EXISTS user_expense (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
