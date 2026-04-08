@@ -1,13 +1,59 @@
 #https://www.geeksforgeeks.org/data-science/data-visualization-different-charts-python/
 #multiple bar chart: https://www.geeksforgeeks.org/matplotlib-bar-chart-in-python/
 from datetime import datetime
+import traceback
+from unicodedata import name
 import pandas as pd
 import matplotlib.pyplot as plt
 from lib.entity.expense_manager import Expense, ExpenseManager
 class VisualizationManager:
     def __init__(self, db_file):
         self.db_file = db_file
+    def on_close(event):
+        print('Figure closed. Performing cleanup or next steps...')
 
+    def plot_interest_trends(self):
+        try:
+            list_interest=ExpenseManager(self.db_file).get_interest_trends()
+            print(f"Plotting interest trends for {len(list_interest)} interest records.")
+            data=[]
+            period=[]
+            amount=[]
+            for interest in list_interest:
+                data.append([interest.period, interest.rate])
+                period.append(interest.period)
+                amount.append(interest.rate)
+            df_master = pd.DataFrame(data, columns=['name', 'amount'])
+            df_expense_bar = pd.DataFrame({'Period': period
+                                        , 'Amount': amount
+})
+            df = df_master.set_index('name')
+            bar_colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red', 'tab:purple', 'tab:brown', 'tab:pink']
+            ax=df_expense_bar.plot(x="Period"
+                                , y=["Amount"]
+                                    , kind="bar"
+                                    , color=bar_colors
+                                    , width=0.8
+                                    , figsize=(12, 6)
+                                    , linewidth=.1)
+            plt.ylabel("Interest Amount  Paid");        
+            ax.tick_params(axis='x', labelrotation=18,labelsize=8)
+            for i, p in enumerate(ax.patches):
+                height = p.get_height()
+                #print(f"height: {height} Index : {i} ")
+                ax.text((p.get_x() + p.get_width() / 2)
+                        , height/2
+                        , f'{height}'
+                        , ha='center', va='center', rotation='vertical', color="white", size=6, fontweight='bold')    
+            fig.canvas.mpl_connect('close_event', self.on_close)
+            plt.show()
+            plt.close()
+
+        except Exception as e:
+            print("--- Full Traceback ---")
+            traceback.print_exc()
+            print("----------------------")
+            self.app.main_window.error_dialog("Error", f"An error occurred while importing expenses: {e}")
     def plot_expense_trends(self):
         all_expenses = ExpenseManager(self.db_file).get_expenses()
         print(f"Plotting expense trends for {len(all_expenses)} expenses.")
@@ -68,6 +114,7 @@ class VisualizationManager:
                     , f'{height}'
                     , ha='center', va='center', rotation='vertical', color="white", size=6, fontweight='bold')    
         plt.show()
+        plt.close()
 
 '''
 Unused code for future use

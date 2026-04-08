@@ -12,6 +12,10 @@ class Nudge:
         self.type = type
         self.sentiment = sentiment
         self.status = status
+class Interest:
+    def __init__(self, period, rate):
+        self.period = period
+        self.rate = rate
 class Expense:
     def __init__(self, id:int=-1, name="Enter Name", amount=0, savedamount=0, settledamount=0, duedate=pd.Timestamp.now(), userid=1, categoryid=1, frequencyid=1, status=0):
         self.id = id

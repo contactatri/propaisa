@@ -70,15 +70,24 @@ class LoginController:
             section=10
         )
         self.app.commands.add(command_export_expenses) # Add the command to the application
-        command_visualization = toga.Command(
-            self.menu_visualization_handler,
-            text='Visualization',
+        command_expense_visualization = toga.Command(
+            self.menu_expense_visualization_handler,
+            text='Expense Visualizations',
             tooltip='View expense visualizations',
             shortcut=toga.Key.MOD_1 + 'v',
             group=visualization_group,
             section=10
         )
-        self.app.commands.add(command_visualization) # Add the command to the application
+        self.app.commands.add(command_expense_visualization) # Add the command to the application
+        command_interest_visualization = toga.Command(
+            self.menu_interest_visualization_handler,
+            text='Interest Visualizations',
+            tooltip='View interest visualizations',
+            shortcut=toga.Key.MOD_1 + 'i',
+            group=visualization_group,
+            section=10
+        )
+        self.app.commands.add(command_interest_visualization) # Add the command to the application
 
         ########################################
         expense_controller = ExpenseController(self.app, self.app.userid, self.app.script_dir, self.app.icons_dir)
@@ -115,7 +124,11 @@ class LoginController:
             traceback.print_exc()
             print("----------------------")
             self.app.main_window.error_dialog("Error", f"An error occurred while importing expenses: {e}")
-    def menu_visualization_handler(self, sender, **kwargs):
+    def menu_expense_visualization_handler(self, sender, **kwargs):
         #self.app.main_window.info_dialog("Action", "Visualization menu item was clicked!")
         visualization_manager = VisualizationManager(f"{self.app.script_dir}/propaisa.db")
         visualization_manager.plot_expense_trends()
+    def menu_interest_visualization_handler(self, sender, **kwargs):
+        #self.app.main_window.info_dialog("Action", "Visualization menu item was clicked!")
+        visualization_manager = VisualizationManager(f"{self.app.script_dir}/propaisa.db")
+        visualization_manager.plot_interest_trends()

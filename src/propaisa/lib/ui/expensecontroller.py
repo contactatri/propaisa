@@ -20,7 +20,7 @@ class ExpenseController:
         self.label_Pack = Pack(color="black", font_size=12, font_weight="bold")
         self.input_Pack = Pack(color="black", font_size=12, font_weight="bold", flex=1)
         self.widget_Pack=Pack(width=20, height=20, padding_right=5)
-        self.new_due_date=None
+        #self.new_due_date=None
     ############################################LIST OF ACTIONS
     def clear_table_action(self, widget):
         print(f"Action initiated: {widget.text} button pressed")
@@ -86,7 +86,7 @@ class ExpenseController:
         print(f"Selected date: {widget.value}")
         selected_date = widget.value
         midnight_time = time.min # which is 00:00:00
-        self.new_due_date=datetime.combine(selected_date, midnight_time)
+        #self.new_due_date=datetime.combine(selected_date, midnight_time)
 
     def on_switch_toggle(self, widget):
     # 'widget' refers to the switch that was toggled
@@ -107,7 +107,7 @@ class ExpenseController:
                 amount=int(amt),
                 savedamount=int(svd_amt),
                 settledamount=int(stld_amnt),
-                duedate=self.new_due_date,
+                duedate=datetime.combine(duedate, time.min),
                 categoryid=self.get_category_code(category),
                 status= status
             )
@@ -257,7 +257,8 @@ class ExpenseController:
         expense_data=[]
         for expense in expense_manager.expenses:
             expense_tuple=(expense.name, expense.amount, expense.savedamount, expense.settledamount, expense.gapamount, expense.daily_saving_amount, expense.projected_yearly_interest, expense.duedate, expense.categoryid, expense.status, expense.id)
-            if(expense.status == 0):
+            print(f"Processing Expense: {expense_tuple}")
+            if(expense.status == 0 ):
                 expense_data.append(expense_tuple)
         table = toga.Table(
             headings=['Name', 'Amount', 'Saved Amount', 'Settled Amount', 'Gap Amount', 'Daily Saving Amount', 'Projected Yearly Interest', 'Due Date', 'Category ID', 'Status', 'ID'],
@@ -276,11 +277,12 @@ class ExpenseController:
         print(f"Loaded {len(expense_manager.expenses)} expenses for user ID {self.userid}")
         expense_data=[]
         for expense in expense_manager.expenses:
-            expense_tuple=(expense.name, expense.amount, expense.savedamount, expense.settledamount, expense.gapamount, expense.daily_saving_amount, expense.projected_yearly_interest, expense.duedate, expense.id)
+            expense_tuple=(expense.name, expense.amount, expense.savedamount, expense.settledamount, expense.gapamount, expense.daily_saving_amount, expense.projected_yearly_interest, expense.duedate, expense.categoryid, expense.status, expense.id)
+            print(f"Processing Expense: {expense_tuple}")
             if(expense.status == 1):
                 expense_data.append(expense_tuple)
         table = toga.Table(
-            headings=['Name', 'Amount', 'Saved Amount', 'Settled Amount', 'Gap Amount', 'Daily Saving Amount', 'Projected Yearly Interest', 'Due Date', 'ID'],
+            headings=['Name', 'Amount', 'Saved Amount', 'Settled Amount', 'Gap Amount', 'Daily Saving Amount', 'Projected Yearly Interest', 'Due Date', 'Category ID', 'Status', 'ID'],
             data=expense_data,
             on_select=self.on_select_handler, # Pass the handler function
             multiple_select=False, # Set to True for multiple selections
@@ -483,7 +485,9 @@ class ExpenseController:
             due_date_input_label = toga.Label(f"Due Date",margin=(0, 5), style=self.label_Pack)
             due_date_amount_input = toga.TextInput(value=f"{expense.duedate}", style=self.input_Pack)
             due_date_value_input_label = toga.Label(expense.duedate,margin=(0, 5), style=self.label_Pack)
+            self.new_due_date=expense.duedate
             date_input = toga.DateInput(on_change=self.on_date_change,style=Pack(padding=10))
+            date_input.value = expense.duedate
             due_date_input_label_with_icon_box.add(due_date_input_icon_widget)
             due_date_input_label_with_icon_box.add(due_date_input_label)
             due_date_input_label_with_icon_box.add(due_date_value_input_label)

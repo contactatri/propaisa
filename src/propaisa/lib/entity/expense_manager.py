@@ -5,7 +5,8 @@ import pandas as pd
 from typing import Dict, Any, ClassVar
 from typing import List, Optional
 from lib.entity.sqlitemanager import SQLiteManager 
-from lib.entity.expense import Expense
+from lib.entity.expense import Expense, Interest
+
 # Define color codes as constants
 class Colors:
     RED = '\033[91m'
@@ -13,6 +14,7 @@ class Colors:
     YELLOW = '\033[93m'
     BLUE = '\033[94m'
     ENDC = '\033[0m' # Reset color
+
 class ExpenseManager:
     """
     A class to set up the SQLite database with required tables for expense  management.
@@ -23,6 +25,7 @@ class ExpenseManager:
         self.expenses = []
         self.get_expenses()
         #self.create_expense_category("Fashion", "Clothing, accessories, and related items")
+        #self.get_interest_trends()
     def get_expenses_as_dataframe(self) -> pd.DataFrame:
         try:
             # Connect to the database and use the connection as a context manager
@@ -46,6 +49,28 @@ class ExpenseManager:
         except sqlite3.Error as e:
             print(f"A database error occurred: {e}")
             return pd.DataFrame()  # Return an empty DataFrame in case of error
+    def get_interest_trends(self) -> List[Interest]:
+        list_interest=[]
+        try:
+            with SQLiteManager(self.db_file) as db:
+                query = "SELECT strftime('%Y-%m', duedate) AS year_month,  SUM(amount) AS total FROM user_expense WHERE userid = ? and categoryid = ? GROUP BY year_month ORDER BY year_month "
+                rows = db.fetch_all(query, (self.userid, 9))  # Assuming categoryid = 9 for interest
+                # Define the format string matching the SQLite string format
+                format_string = '%Y-%m-%d %H:%M:%S'
+                if rows:                
+                    for row in rows:
+                        new_interest = Interest(row[0], row[1])
+                        list_interest.append(new_interest)
+                    # Using map() with a lambda function
+                    interest_list_map = list(map(lambda interest_obj: f"{interest_obj.period} | {str(interest_obj.rate)}", list_interest))
+                    print(f"User_Interests: {interest_list_map}")
+                else:
+                    print(f"No records found.")
+            #print(f"Loaded {len(self.expenses)} expenses for user ID {self.userid}")
+            return list_interest
+        except sqlite3.Error as e:
+            print(f"A database error occurred: {e}")
+            return []
     def get_expenses(self) -> List[Expense]:
         try:
             self.expenses.clear()  # Clear existing expenses before loading new ones
