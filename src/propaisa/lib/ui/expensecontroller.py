@@ -21,6 +21,7 @@ class ExpenseController:
         self.input_Pack = Pack(color="black", font_size=12, font_weight="bold", flex=1)
         self.widget_Pack=Pack(width=20, height=20, padding_right=5)
         self.new_due_date=None
+    ############################################LIST OF ACTIONS
     def clear_table_action(self, widget):
         print(f"Action initiated: {widget.text} button pressed")
     def create_new_income_action(self, widget):
@@ -61,7 +62,9 @@ class ExpenseController:
                     amount=selected_row.amount, 
                     savedamount=selected_row.saved_amount,
                     settledamount=selected_row.settled_amount,
-                    duedate=selected_row.due_date
+                    duedate=selected_row.due_date,
+                    categoryid=selected_row.category_id,
+                    status=selected_row.status
                 )
                 nudge_viewer = NudgeViewer(self.app, self.app.userid, self.app.script_dir, self.app.icons_dir)
                 nudge_box = toga.Box(style=Pack(direction=COLUMN,flex=1, background_color="#fff"))
@@ -78,6 +81,102 @@ class ExpenseController:
 
             self.app.main_window.content = self.app.main_box
             self.app.main_window.show()
+    def on_date_change(self, widget):
+        # This function is called when the date is changed
+        print(f"Selected date: {widget.value}")
+        selected_date = widget.value
+        midnight_time = time.min # which is 00:00:00
+        self.new_due_date=datetime.combine(selected_date, midnight_time)
+
+    def on_switch_toggle(self, widget):
+    # 'widget' refers to the switch that was toggled
+        print(f"Switch {widget.text} is now {'ON' if widget.value else 'OFF'}")
+    
+    def on_category_switch(self, widget):
+    # 'widget' refers to the category selection widget
+        print(f"Selected category: {widget.value}")
+
+    def update_action(self, expense_id, expense_name, amt, svd_amt,stld_amnt, duedate,category, status=0):
+        try:
+            expense_manager= ExpenseManager(f"{self.script_dir}/propaisa.db",self.userid)
+            #Update expense object with new values from input fields
+            print(f"Updating Expense ID: {expense_id} with Amount: {amt}, Saved Amount: {svd_amt}, Settled Amount: {stld_amnt}, Category: {category}, Status: {status}, Due Date: {duedate} and internal due date value: {self.new_due_date}   ")
+            new_expense= Expense(
+                id=expense_id,
+                name=expense_name,
+                amount=int(amt),
+                savedamount=int(svd_amt),
+                settledamount=int(stld_amnt),
+                duedate=self.new_due_date,
+                categoryid=self.get_category_code(category),
+                status= status
+            )
+            if(new_expense.id==-1):
+                expense_manager.create_expenses(new_expense)
+            else:
+                expense_manager.update_expense(new_expense)
+            self.app.main_box.clear()
+            self.app.main_box.add(self.app.get_header_box())    
+            self.app.main_box.add(self.expense_dashboard_screen())
+            self.app.main_window.content = self.app.main_box    
+            self.app.main_window.show()
+            
+        except Exception as e:
+            # This block catches all standard exceptions and stores the error in 'e'
+            print(f"An exception of type {type(e).__name__} occurred: {e}")
+    def show_archived_expenses_action(self,widget):
+        try:
+            self.app.main_box.clear()
+            self.app.main_box.add(self.app.get_header_box())    
+            self.app.main_box.add(self.archived_expense_dashboard_screen())
+            self.app.main_window.content = self.app.main_box    
+            self.app.main_window.show()
+            
+        except Exception as e:
+            # This block catches all standard exceptions and stores the error in 'e'
+            print(f"An exception of type {type(e).__name__} occurred: {e}")
+
+    def cancel_action(self):
+        try:
+            self.app.main_box.clear()
+            self.app.main_box.add(self.app.get_header_box())    
+            self.app.main_box.add(self.expense_dashboard_screen())
+            self.app.main_window.content = self.app.main_box    
+            self.app.main_window.show()
+            
+        except Exception as e:
+            # This block catches all standard exceptions and stores the error in 'e'
+            print(f"An exception of type {type(e).__name__} occurred: {e}")
+    def get_category_code(self, category_name:str):
+        category_mapping = {
+            'Rent/Mortgage': 1,
+            'Utilities': 2,
+            'Groceries': 3,
+            'Transportation': 4,
+            'Dining Out': 5,
+            'Entertainment': 6,
+            'Healthcare': 7,
+            'Education': 8,
+            'Principle/Interest': 9,
+            'Fashion': 10
+        }
+        return category_mapping.get(category_name, None)
+    def get_category_display_name(self, category_code:int):
+        print(f"Getting display name for category code: {category_code}")
+        category_mapping = {
+            1: 'Rent/Mortgage',
+            2: 'Utilities',
+            3: 'Groceries',
+            4: 'Transportation',
+            5: 'Dining Out',
+            6: 'Entertainment',
+            7: 'Healthcare',
+            8: 'Education',
+            9: 'Principle/Interest',
+            10: 'Fashion'
+        }
+        return category_mapping.get(category_code, None)
+    ################################################################################
     def get_enter_income_box (self):
         body_box=toga.Box(style=Pack(direction=COLUMN,flex=1, background_color="#fff"))
         #Field Amount#####################
@@ -157,11 +256,11 @@ class ExpenseController:
         print(f"Loaded {len(expense_manager.expenses)} expenses for user ID {self.userid}")
         expense_data=[]
         for expense in expense_manager.expenses:
-            expense_tuple=(expense.name, expense.amount, expense.savedamount, expense.settledamount, expense.gapamount, expense.daily_saving_amount, expense.projected_yearly_interest, expense.duedate, expense.id)
+            expense_tuple=(expense.name, expense.amount, expense.savedamount, expense.settledamount, expense.gapamount, expense.daily_saving_amount, expense.projected_yearly_interest, expense.duedate, expense.categoryid, expense.status, expense.id)
             if(expense.status == 0):
                 expense_data.append(expense_tuple)
         table = toga.Table(
-            headings=['Name', 'Amount', 'Saved Amount', 'Settled Amount', 'Gap Amount', 'Daily Saving Amount', 'Projected Yearly Interest', 'Due Date', 'ID'],
+            headings=['Name', 'Amount', 'Saved Amount', 'Settled Amount', 'Gap Amount', 'Daily Saving Amount', 'Projected Yearly Interest', 'Due Date', 'Category ID', 'Status', 'ID'],
             data=expense_data,
             on_select=self.on_select_handler, # Pass the handler function
             multiple_select=False, # Set to True for multiple selections
@@ -194,7 +293,7 @@ class ExpenseController:
         #nudge_viewer = NudgeViewer(self.app, self.app.userid, self.app.script_dir, self.app.icons_dir)
         #nudge_box = nudge_viewer.get_nudge_box()
         #body_box.add(nudge_box)
-        body_box.add(toga.Label(f"Unsettled Expenses",margin=(0, 5), style=self.label_Pack))
+        body_box.add(toga.Label(f"Active/Unsettled Expenses",margin=(0, 5), style=self.label_Pack))
         body_box.add(self.get_expense_list_box())
         controls_box = toga.Box(style=Pack(height=5))
         scroll_container = toga.ScrollContainer(
@@ -215,8 +314,15 @@ class ExpenseController:
             on_press=partial(self.create_new_income_action),
             margin=5,
         )
+        button_show_archived_expenses = toga.Button(
+            "Show Archived Expenses",
+            #on_press=partial(self.toga_helper.show_alert, message_str="Hello from helper"),
+            on_press=partial(self.show_archived_expenses_action),
+            margin=5,
+        )
         controls_box.add(button_add_new_expense)
         controls_box.add(button_add_new_income)
+        controls_box.add(button_show_archived_expenses)
         body_box.add(scroll_container)
         return body_box
     def archived_expense_dashboard_screen (self):
@@ -235,14 +341,20 @@ class ExpenseController:
         )
         
         body_box.add(scroll_container)
+        button_cancel = toga.Button(
+                "Cancel",
+                #on_press=partial(self.update_action,amount_input.value,saved_amount_input.value,settled_amount_input.value),
+                on_press=lambda *args: self.cancel_action(),
+                margin=5,
+            )
+        body_box.add(button_cancel)
         return body_box
 
     def get_expense_box(self, expense:Expense=None):
         expense_box=toga.Box(style=Pack(direction=COLUMN,flex=1, background_color="#fff"))
         try:
+            self.new_due_date=None
             #Field ID #####################
-            
-            
             id_label_with_icon_box = toga.Box(style=Pack(direction=ROW, alignment="center"))
             id_icon_path = f"{self.icons_dir}/ID.png" 
             id_icon_image = toga.Image(id_icon_path)
@@ -405,7 +517,7 @@ class ExpenseController:
                 style=self.label_Pack
             )
             category_input = toga.Selection(
-                items=['1-Rent/Mortgage', '2-Utilities', '3-Groceries','4-Transportation','5-Dining Out','6-Entertainment','7-Healthcare','8-Education','9-Principle/Interest']
+                items=['Rent/Mortgage', 'Utilities', 'Groceries','Transportation','Dining Out','Entertainment','Healthcare','Education','Principle/Interest','Fashion']
                 , on_change=self.on_category_switch)
             if(expense.id!=-1):
                 category_input.value=self.get_category_display_name(expense.categoryid)
@@ -418,7 +530,7 @@ class ExpenseController:
             button_save = toga.Button(
                 "Update Expense",
                 #on_press=partial(self.update_action,amount_input.value,saved_amount_input.value,settled_amount_input.value),
-                on_press=lambda *args: self.update_action(expense.id, expense.name,amount_input.value,saved_amount_input.value,settled_amount_input.value, expense.duedate,category_input.value, status_input.value),
+                on_press=lambda *args: self.update_action(expense.id, name_input.value,amount_input.value,saved_amount_input.value,settled_amount_input.value, date_input.value,category_input.value, status_input.value),
                 margin=5,
             )
             expense_box.add(button_save)
@@ -433,89 +545,7 @@ class ExpenseController:
         except Exception as e:
             # This block catches all standard exceptions and stores the error in 'e'
             print(f"An exception of type {type(e).__name__} occurred: {e}")
-    def on_date_change(self, widget):
-        # This function is called when the date is changed
-        print(f"Selected date: {widget.value}")
-        selected_date = widget.value
-        midnight_time = time.min # which is 00:00:00
-        self.new_due_date=datetime.combine(selected_date, midnight_time)
-
-    def on_switch_toggle(self, widget):
-    # 'widget' refers to the switch that was toggled
-        print(f"Switch {widget.text} is now {'ON' if widget.value else 'OFF'}")
     
-    def on_category_switch(self, widget):
-    # 'widget' refers to the category selection widget
-        print(f"Selected category: {widget.value}")
-
-    def update_action(self, expense_id, expense_name, amt, svd_amt,stld_amnt, duedate,category, status=0):
-        try:
-            expense_manager= ExpenseManager(f"{self.script_dir}/propaisa.db",self.userid)
-            #Update expense object with new values from input fields
-            print(f"Updating Expense ID: {expense_id} with Amount: {amt}, Saved Amount: {svd_amt}, Settled Amount: {stld_amnt}, Category: {category}, Status: {status}, Due Date: {duedate} and internal due date value: {self.new_due_date}   ")
-            if(self.new_due_date==None):
-                self.new_due_date=duedate
-            new_expense= Expense(
-                id=expense_id,
-                name=expense_name,
-                amount=int(amt),
-                savedamount=int(svd_amt),
-                settledamount=int(stld_amnt),
-                duedate=self.new_due_date,
-                categoryid=self.get_category_code(category),
-                status= status
-            )
-            if(new_expense.id==-1):
-                expense_manager.create_expenses(new_expense)
-            else:
-                expense_manager.update_expense(new_expense)
-            self.app.main_box.clear()
-            self.app.main_box.add(self.app.get_header_box())    
-            self.app.main_box.add(self.expense_dashboard_screen())
-            self.app.main_window.content = self.app.main_box    
-            self.app.main_window.show()
-            
-        except Exception as e:
-            # This block catches all standard exceptions and stores the error in 'e'
-            print(f"An exception of type {type(e).__name__} occurred: {e}")
-    def cancel_action(self):
-        try:
-            self.app.main_box.clear()
-            self.app.main_box.add(self.app.get_header_box())    
-            self.app.main_box.add(self.expense_dashboard_screen())
-            self.app.main_window.content = self.app.main_box    
-            self.app.main_window.show()
-            
-        except Exception as e:
-            # This block catches all standard exceptions and stores the error in 'e'
-            print(f"An exception of type {type(e).__name__} occurred: {e}")
-    def get_category_code(self, category_name:str):
-        category_mapping = {
-            '1-Rent/Mortgage': 1,
-            '2-Utilities': 2,
-            '3-Groceries': 3,
-            '4-Transportation': 4,
-            '5-Dining Out': 5,
-            '6-Entertainment': 6,
-            '7-Healthcare': 7,
-            '8-Education': 8,
-            '9-Principle/Interest': 9
-        }
-        return category_mapping.get(category_name, None)
-    def get_category_display_name(self, category_code:int):
-        print(f"Getting display name for category code: {category_code}")
-        category_mapping = {
-            1: '1-Rent/Mortgage',
-            2: '2-Utilities',
-            3: '3-Groceries',
-            4: '4-Transportation',
-            5: '5-Dining Out',
-            6: '6-Entertainment',
-            7: '7-Healthcare',
-            8: '8-Education',
-            9: '9-Principle/Interest'
-        }
-        return category_mapping.get(category_code, None)
     
     
     

@@ -7,6 +7,7 @@ from lib.ui.togahelper import TogaHelper
 from pathlib import Path
 from lib.ui.nudgeviewer import NudgeViewer
 from lib.ui.expensecontroller import ExpenseController
+from lib.entity.visualization_manager import VisualizationManager
 from lib.entity.expense import Expense, Nudge
 class LoginController:
     def __init__(self, app):
@@ -115,4 +116,6 @@ class LoginController:
             print("----------------------")
             self.app.main_window.error_dialog("Error", f"An error occurred while importing expenses: {e}")
     def menu_visualization_handler(self, sender, **kwargs):
-        self.app.main_window.info_dialog("Action", "Visualization menu item was clicked!")
+        #self.app.main_window.info_dialog("Action", "Visualization menu item was clicked!")
+        visualization_manager = VisualizationManager(f"{self.app.script_dir}/propaisa.db")
+        visualization_manager.plot_expense_trends()

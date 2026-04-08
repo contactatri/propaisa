@@ -9,7 +9,8 @@ class VisualizationManager:
         self.db_file = db_file
 
     def plot_expense_trends(self):
-        expenses = ExpenseManager(self.db_file).get_expenses()
+        all_expenses = ExpenseManager(self.db_file).get_expenses()
+        print(f"Plotting expense trends for {len(all_expenses)} expenses.")
         data=[]
         name=[]
         amount=[]   
@@ -18,9 +19,10 @@ class VisualizationManager:
         gapamount=[]
         daily_saving_amount=[]
         projected_yearly_interest=[]    
+        # Assuming a list of 'User' objects with a 'role' attribute
+        active_expenses = [obj for obj in all_expenses if obj.status == 0]  # Assuming 0 means active
 
-
-        for obj in expenses:
+        for obj in active_expenses:
             data.append([obj.name, obj.amount, obj.savedamount, obj.settledamount, obj.duedate, obj.userid, obj.categoryid, obj.frequencyid, obj.status])
             name.append(obj.name)
             amount.append(obj.amount)

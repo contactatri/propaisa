@@ -22,6 +22,7 @@ class ExpenseManager:
         self.userid = userid  # For demo purpose, assuming single user with userid = 1
         self.expenses = []
         self.get_expenses()
+        #self.create_expense_category("Fashion", "Clothing, accessories, and related items")
     def get_expenses_as_dataframe(self) -> pd.DataFrame:
         try:
             # Connect to the database and use the connection as a context manager
@@ -47,6 +48,7 @@ class ExpenseManager:
             return pd.DataFrame()  # Return an empty DataFrame in case of error
     def get_expenses(self) -> List[Expense]:
         try:
+            self.expenses.clear()  # Clear existing expenses before loading new ones
             # Connect to the database and use the connection as a context manager
             with SQLiteManager(self.db_file) as db:
                 query = "SELECT id,name,amount,savedamount,settledamount,duedate,userid,categoryid,frequencyid,status FROM user_expense WHERE userid = ? "
@@ -62,6 +64,7 @@ class ExpenseManager:
                     #print(f"User_Expenses: {expense_list_map}")
                 else:
                     print(f"No records found.")
+            #print(f"Loaded {len(self.expenses)} expenses for user ID {self.userid}")
             return self.expenses
         except sqlite3.Error as e:
             print(f"A database error occurred: {e}")
@@ -84,6 +87,14 @@ class ExpenseManager:
             print("**********************************************************")
 
         return 0
+    def create_expense_category(self, category_name: str, category_description : str):
+        try:
+            # Connect to the database and use the connection as a context manager
+            with SQLiteManager(self.db_file) as db:
+                db.insert_data("INSERT INTO expense_category (name, description) VALUES (?, ?)", (category_name, category_description))
+
+        except sqlite3.Error as e:
+            print(f"A database error occurred: {e}")
     def create_expenses(self, expense: Expense):
         try:
             # Connect to the database and use the connection as a context manager
@@ -92,7 +103,8 @@ class ExpenseManager:
                 INSERT INTO user_expense (name, amount, savedamount, settledamount, duedate, userid, categoryid, frequencyid, status)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """
-                db.insert_data(query, (expense.name, expense.amount, expense.savedamount, expense.settledamount, expense.duedate.to_pydatetime(), expense.userid, expense.categoryid, expense.frequencyid, expense.status))
+                #db.insert_data(query, (expense.name, expense.amount, expense.savedamount, expense.settledamount, expense.duedate.to_pydatetime(), expense.userid, expense.categoryid, expense.frequencyid, expense.status))
+                db.insert_data(query, (expense.name, expense.amount, expense.savedamount, expense.settledamount, expense.duedate, expense.userid, expense.categoryid, expense.frequencyid, expense.status))
 
         except sqlite3.Error as e:
             print(f"A database error occurred: {e}")
@@ -116,6 +128,7 @@ class ExpenseManager:
                 query = """
                 UPDATE user_expense
                 SET 
+                name = ?,
                 amount = ?
                 ,savedamount = ?
                 ,settledamount = ?
@@ -125,7 +138,7 @@ class ExpenseManager:
                 WHERE id = ? AND userid = ?
                 """
                 #print(f"query: {query}")
-                db.execute_query(query, (obj.amount, obj.savedamount, obj.settledamount, obj.duedate, obj.categoryid, obj.status, obj.id, self.userid))
+                db.execute_query(query, (obj.name, obj.amount, obj.savedamount, obj.settledamount, obj.duedate, obj.categoryid, obj.status, obj.id, self.userid))
 
         except sqlite3.Error as e:
             print(f"A database error occurred: {e}")
