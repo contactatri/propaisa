@@ -4,6 +4,8 @@ from datetime import datetime
 import traceback
 from unicodedata import name
 import pandas as pd
+import matplotlib
+#matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from lib.entity.expense_manager import Expense, ExpenseManager
 class VisualizationManager:
@@ -50,6 +52,7 @@ class VisualizationManager:
 
             df_expense_bar = pd.DataFrame({'Period': period , 'Total Income': total_income, 'Total Expense': total_expense})
             bar_colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red', 'tab:purple', 'tab:brown', 'tab:pink']
+            #fig, ax = plt.subplots()
             ax=df_expense_bar.plot(x="Period"
                                 , y=["Total Expense", "Total Income"]
                                     , kind="bar"
@@ -66,6 +69,9 @@ class VisualizationManager:
                         , height/2
                         , f'{height}'
                         , ha='center', va='center', rotation='vertical', color="white", size=6, fontweight='bold')    
+            #fig.canvas.draw() 
+            #renderer = fig.canvas.renderer
+            #fig.draw(renderer)
             plt.show()
             plt.close()
 

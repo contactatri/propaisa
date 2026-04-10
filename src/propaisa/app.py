@@ -5,6 +5,7 @@ from functools import partial
 import sys
 import subprocess
 from pathlib import Path
+import threading
 sys.path.insert(0, str(Path(__file__).parent))
 import toga
 from toga.style import Pack
@@ -51,7 +52,9 @@ class propaisa(toga.App):
         self.main_box = toga.Box(style=Pack(direction=COLUMN, flex=1))
         self.main_box.add(self.login_controller.pre_login_screen())
         self.main_window = toga.MainWindow(title=self.formal_name)
+
         self.main_window.content = self.main_box
+        #self.main_window.on_close = self.on_close_app
         self.main_window.show()
         
     def get_header_box(self):
@@ -65,7 +68,12 @@ class propaisa(toga.App):
         return header_box
     def say_hello(self, widget):
         print(f"Hello, {self.name_input.value}")
-    
+    def on_close_app(self, window):
+        # Signal threads to stop
+        self.stop_event.clear()
+        # Optionally wait for thread to finish
+        # self.my_thread.join()
+        return True # Allow app to close
     
 def main():
     return propaisa()

@@ -624,7 +624,7 @@ class ExpenseController:
                 style=self.label_Pack
             )
             category_input = toga.Selection(
-                items=['Rent/Mortgage', 'Utilities', 'Groceries','Transportation','Dining Out','Entertainment','Healthcare','Education','Principle/Interest','Fashion']
+                items=['Rent/Mortgage', 'Utilities', 'Groceries','Transportation','Dining Out','Entertainment','Healthcare','Education','Principle/Interest','Fashion','Business Expense']
                 , on_change=self.on_category_switch)
             if(expense.id!=-1):
                 category_input.value=self.get_category_display_name(expense.categoryid)
