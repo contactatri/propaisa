@@ -88,6 +88,15 @@ class LoginController:
             section=10
         )
         self.app.commands.add(command_interest_visualization) # Add the command to the application
+        command_income_expense_visualization = toga.Command(
+            self.menu_income_expense_visualization_handler,
+            text='Income-Expense Visualizations',
+            tooltip='View income and expense visualizations',
+            shortcut=toga.Key.MOD_1 + 'e',
+            group=visualization_group,
+            section=10
+        )
+        self.app.commands.add(command_income_expense_visualization) # Add the command to the application
 
         ########################################
         expense_controller = ExpenseController(self.app, self.app.userid, self.app.script_dir, self.app.icons_dir)
@@ -132,3 +141,7 @@ class LoginController:
         #self.app.main_window.info_dialog("Action", "Visualization menu item was clicked!")
         visualization_manager = VisualizationManager(f"{self.app.script_dir}/propaisa.db")
         visualization_manager.plot_interest_trends()
+    def menu_income_expense_visualization_handler(self, sender, **kwargs):
+        #self.app.main_window.info_dialog("Action", "Visualization menu item was clicked!")
+        visualization_manager = VisualizationManager(f"{self.app.script_dir}/propaisa.db")
+        visualization_manager.plot_income_expense_trends()

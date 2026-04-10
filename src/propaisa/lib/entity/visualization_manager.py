@@ -11,7 +11,69 @@ class VisualizationManager:
         self.db_file = db_file
     def on_close(event):
         print('Figure closed. Performing cleanup or next steps...')
+    def plot_income_expense_trends(self):
+        try:
+            list_income_trends=[]
+            income_trends=ExpenseManager(self.db_file).get_income_trends()
+            for trend in income_trends:
+                list_income_trends.append([trend.period, trend.total_income])
+            list_expense_trends=[]
+            expense_trends=ExpenseManager(self.db_file).get_expense_trends()
+            for trend in expense_trends:
+                list_expense_trends.append([trend.period, trend.total_expense])
+            print(f"Plotting income and expense trends for {len(income_trends)} income records and {len(expense_trends)} expense records.")
 
+            # Convert to DataFrames and specify column names
+            df1 = pd.DataFrame(list_income_trends, columns=['period', 'total_income'])
+            df2 = pd.DataFrame(list_expense_trends, columns=['period', 'total_expense'])
+
+            # Merge on the common column 'period'
+            # Use how='inner', 'left', 'right', or 'outer'
+            print(f"Income Trends DataFrame:\n{df1}")
+            print(f"Expense Trends DataFrame:\n{df2}")
+            merged_df = pd.merge(df1, df2, on='period', how='inner')
+            print(f"Master DataFrame:\n{merged_df}")
+            merged_list = merged_df.values.tolist()
+            data=[]
+            period=[]
+            total_income=[]
+            total_expense=[]
+            for row in merged_list:
+                data.append([row[0], row[1], row[2]])
+                period.append(row[0])
+                total_income.append(row[1])
+                total_expense.append(row[2])
+            print(f"Data for plotting:\n{data}")
+            print(f"Period: {period}")
+            print(f"Total Income: {total_income}")
+            print(f"Total Expense: {total_expense}")
+
+            df_expense_bar = pd.DataFrame({'Period': period , 'Total Income': total_income, 'Total Expense': total_expense})
+            bar_colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red', 'tab:purple', 'tab:brown', 'tab:pink']
+            ax=df_expense_bar.plot(x="Period"
+                                , y=["Total Expense", "Total Income"]
+                                    , kind="bar"
+                                    , color=bar_colors
+                                    , width=0.8
+                                    , figsize=(12, 6)
+                                    , linewidth=.1)
+            plt.ylabel("Interest Amount");        
+            ax.tick_params(axis='x', labelrotation=18,labelsize=8)
+            for i, p in enumerate(ax.patches):
+                height = p.get_height()
+                #print(f"height: {height} Index : {i} ")
+                ax.text((p.get_x() + p.get_width() / 2)
+                        , height/2
+                        , f'{height}'
+                        , ha='center', va='center', rotation='vertical', color="white", size=6, fontweight='bold')    
+            plt.show()
+            plt.close()
+
+        except Exception as e:
+            print("--- Full Traceback ---")
+            traceback.print_exc()
+            print("----------------------")
+            self.app.main_window.error_dialog("Error", f"An error occurred while importing expenses: {e}")
     def plot_interest_trends(self):
         try:
             list_interest=ExpenseManager(self.db_file).get_interest_trends()
@@ -23,11 +85,7 @@ class VisualizationManager:
                 data.append([interest.period, interest.rate])
                 period.append(interest.period)
                 amount.append(interest.rate)
-            df_master = pd.DataFrame(data, columns=['name', 'amount'])
-            df_expense_bar = pd.DataFrame({'Period': period
-                                        , 'Amount': amount
-})
-            df = df_master.set_index('name')
+            df_expense_bar = pd.DataFrame({'Period': period , 'Amount': amount})
             bar_colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red', 'tab:purple', 'tab:brown', 'tab:pink']
             ax=df_expense_bar.plot(x="Period"
                                 , y=["Amount"]
@@ -45,7 +103,6 @@ class VisualizationManager:
                         , height/2
                         , f'{height}'
                         , ha='center', va='center', rotation='vertical', color="white", size=6, fontweight='bold')    
-            fig.canvas.mpl_connect('close_event', self.on_close)
             plt.show()
             plt.close()
 

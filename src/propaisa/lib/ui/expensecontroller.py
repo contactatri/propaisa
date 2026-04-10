@@ -1,6 +1,7 @@
 from datetime import datetime, date, time
 from functools import partial
 from pathlib import Path
+import traceback
 import toga
 from toga.style import Pack
 from toga.style.pack import COLUMN, ROW
@@ -96,6 +97,23 @@ class ExpenseController:
     # 'widget' refers to the category selection widget
         print(f"Selected category: {widget.value}")
 
+    def save_new_income_action(self, amount, date, description=""):
+        try:
+            expense_manager= ExpenseManager(f"{self.script_dir}/propaisa.db",self.userid)
+            #Create new income object with values from input fields
+            print(f"Saving new income with Amount: {amount}, Income Date: {date}, Description: {description}")
+            
+            expense_manager.create_income(amount=int(amount), record_date=datetime.combine(date, time.min), description=description, user_id=self.userid)
+            self.app.main_box.clear()
+            self.app.main_box.add(self.app.get_header_box())    
+            self.app.main_box.add(self.expense_dashboard_screen())
+            self.app.main_window.content = self.app.main_box    
+            self.app.main_window.show()
+            
+        except Exception as e:
+            # This block catches all standard exceptions and stores the error in 'e'
+            print(f"An exception of type {type(e).__name__} occurred: {e}")
+
     def update_action(self, expense_id, expense_name, amt, svd_amt,stld_amnt, duedate,category, status=0):
         try:
             expense_manager= ExpenseManager(f"{self.script_dir}/propaisa.db",self.userid)
@@ -135,6 +153,17 @@ class ExpenseController:
         except Exception as e:
             # This block catches all standard exceptions and stores the error in 'e'
             print(f"An exception of type {type(e).__name__} occurred: {e}")
+    def show_income_list_action(self,widget):
+        try:
+            self.app.main_box.clear()
+            self.app.main_box.add(self.app.get_header_box())    
+            self.app.main_box.add(self.income_dashboard_screen())
+            self.app.main_window.content = self.app.main_box    
+            self.app.main_window.show()
+            
+        except Exception as e:
+            # This block catches all standard exceptions and stores the error in 'e'
+            print(f"An exception of type {type(e).__name__} occurred: {e}")
 
     def cancel_action(self):
         try:
@@ -158,7 +187,8 @@ class ExpenseController:
             'Healthcare': 7,
             'Education': 8,
             'Principle/Interest': 9,
-            'Fashion': 10
+            'Fashion': 10,
+            'Business Expense': 11
         }
         return category_mapping.get(category_name, None)
     def get_category_display_name(self, category_code:int):
@@ -173,7 +203,8 @@ class ExpenseController:
             7: 'Healthcare',
             8: 'Education',
             9: 'Principle/Interest',
-            10: 'Fashion'
+            10: 'Fashion',
+            11: 'Business Expense'
         }
         return category_mapping.get(category_code, None)
     ################################################################################
@@ -189,11 +220,29 @@ class ExpenseController:
             margin=(0, 5),
             style=self.label_Pack
         )
-        amount_input = toga.TextInput(value=0, style=self.input_Pack)
+        amount_input = toga.NumberInput(value=0, style=self.input_Pack, min=0, max=1000000, step=1)
         amount_input_label_with_icon_box.add(amount_input_icon_widget)
         amount_input_label_with_icon_box.add(amount_input_label)
         amount_input_label_with_icon_box.add(amount_input)
         body_box.add(amount_input_label_with_icon_box)
+        ##########################################
+        #Field Description#####################
+        description_input_label_with_icon_box = toga.Box(style=Pack(direction=ROW, alignment="center"))
+        description_input_icon_path = f"{self.icons_dir}/description.png" 
+        description_input_icon_image = toga.Image(description_input_icon_path)
+        description_input_icon_widget = toga.ImageView(image=description_input_icon_image, style=self.widget_Pack)
+        description_input_label = toga.Label(
+            f"Description",
+            margin=(0, 5),
+            style=self.label_Pack
+        )
+        description_input = toga.TextInput(style=self.input_Pack)
+        description_input_label_with_icon_box.add(description_input_icon_widget)
+        description_input_label_with_icon_box.add(description_input_label)
+        description_input_label_with_icon_box.add(description_input)
+        body_box.add(description_input_label_with_icon_box)
+        ##########################################
+            
         ##########################################
         #Field Due Date#####################
         due_date_input_label_with_icon_box = toga.Box(style=Pack(direction=ROW, alignment="center"))
@@ -212,7 +261,7 @@ class ExpenseController:
         button_save = toga.Button(
             "Enter Income",
             #on_press=partial(self.update_action,amount_input.value,saved_amount_input.value,settled_amount_input.value),
-            on_press=lambda *args: self.income_action(amount_input.value, date_input.value),
+            on_press=lambda *args: self.save_new_income_action(amount_input.value, date_input.value,description_input.value),
             margin=5,
         )
         body_box.add(button_save)
@@ -248,6 +297,28 @@ class ExpenseController:
             print(f"An error occurred while importing expenses: {e}")
             self.app.main_window.error_dialog("Import Failed", f"An error occurred while importing expenses: {e}")
 
+    def get_income_list_box(self):
+        try:
+
+            income_manager = ExpenseManager(f"{self.script_dir}/propaisa.db",self.userid)
+            incomes = income_manager.get_incomes()
+            income_data=[]
+            for income in incomes:
+                income_tuple=(income.record_date, income.amount, income.description)
+                income_data.append(income_tuple)
+            table = toga.Table(
+                headings=['Record Date', 'Amount', 'Description'],
+                data=income_data,
+                style=Pack(flex=1,padding=5, background_color="#fff")
+            )
+            return table
+        except Exception as e:
+            print("--- Full Traceback ---")
+            traceback.print_exc() 
+            print("----------------------")
+            self.app.main_window.error_dialog("Error", f"An error occurred while clearing expenses: {e}")
+            return None
+
     def get_expense_list_box (self):
         #expense_list_box=toga.Box(style=Pack(flex=1,direction=COLUMN))
         expense_manager = ExpenseManager(f"{self.script_dir}/propaisa.db",self.userid)
@@ -257,7 +328,7 @@ class ExpenseController:
         expense_data=[]
         for expense in expense_manager.expenses:
             expense_tuple=(expense.name, expense.amount, expense.savedamount, expense.settledamount, expense.gapamount, expense.daily_saving_amount, expense.projected_yearly_interest, expense.duedate, expense.categoryid, expense.status, expense.id)
-            print(f"Processing Expense: {expense_tuple}")
+            #print(f"Processing Expense: {expense_tuple}")
             if(expense.status == 0 ):
                 expense_data.append(expense_tuple)
         table = toga.Table(
@@ -278,7 +349,7 @@ class ExpenseController:
         expense_data=[]
         for expense in expense_manager.expenses:
             expense_tuple=(expense.name, expense.amount, expense.savedamount, expense.settledamount, expense.gapamount, expense.daily_saving_amount, expense.projected_yearly_interest, expense.duedate, expense.categoryid, expense.status, expense.id)
-            print(f"Processing Expense: {expense_tuple}")
+            #print(f"Processing Expense: {expense_tuple}")
             if(expense.status == 1):
                 expense_data.append(expense_tuple)
         table = toga.Table(
@@ -310,21 +381,23 @@ class ExpenseController:
             on_press=partial(self.create_new_expense_action),
             margin=5,
         )
-        button_add_new_income = toga.Button(
-            "Add New Income",
-            #on_press=partial(self.toga_helper.show_alert, message_str="Hello from helper"),
-            on_press=partial(self.create_new_income_action),
-            margin=5,
-        )
+        
         button_show_archived_expenses = toga.Button(
             "Show Archived Expenses",
             #on_press=partial(self.toga_helper.show_alert, message_str="Hello from helper"),
             on_press=partial(self.show_archived_expenses_action),
             margin=5,
         )
+        button_show_incomes = toga.Button(
+            "Show Incomes",
+            #on_press=partial(self.toga_helper.show_alert, message_str="Hello from helper"),
+            on_press=partial(self.show_income_list_action),
+            margin=5,
+        )
         controls_box.add(button_add_new_expense)
-        controls_box.add(button_add_new_income)
+        
         controls_box.add(button_show_archived_expenses)
+        controls_box.add(button_show_incomes)
         body_box.add(scroll_container)
         return body_box
     def archived_expense_dashboard_screen (self):
@@ -346,6 +419,36 @@ class ExpenseController:
         button_cancel = toga.Button(
                 "Cancel",
                 #on_press=partial(self.update_action,amount_input.value,saved_amount_input.value,settled_amount_input.value),
+                on_press=lambda *args: self.cancel_action(),
+                margin=5,
+            )
+        body_box.add(button_cancel)
+        return body_box
+
+    def income_dashboard_screen (self):
+        body_box=toga.Box(style=Pack(direction=COLUMN,flex=1, background_color="#fff"))
+        #nudge_viewer = NudgeViewer(self.app, self.app.userid, self.app.script_dir, self.app.icons_dir)
+        #nudge_box = nudge_viewer.get_nudge_box()
+        #body_box.add(nudge_box)
+        body_box.add(toga.Label(f"Incomes",margin=(0, 5), style=self.label_Pack))
+        body_box.add(self.get_income_list_box())
+        controls_box = toga.Box(style=Pack(height=5))
+        scroll_container = toga.ScrollContainer(
+            content=controls_box
+            ,style=Pack(flex=1,direction=COLUMN)
+            ,horizontal=False
+            , vertical=True
+        )
+        button_add_new_income = toga.Button(
+            "Add New Income",
+            #on_press=partial(self.toga_helper.show_alert, message_str="Hello from helper"),
+            on_press=partial(self.create_new_income_action),
+            margin=5,
+        )
+        controls_box.add(button_add_new_income)
+        body_box.add(scroll_container)
+        button_cancel = toga.Button(
+                "Cancel",
                 on_press=lambda *args: self.cancel_action(),
                 margin=5,
             )
@@ -402,7 +505,7 @@ class ExpenseController:
                 margin=(0, 5),
                 style=self.label_Pack
             )
-            amount_input = toga.TextInput(value=f"{expense.amount}", style=self.input_Pack)
+            amount_input = toga.NumberInput(value=f"{expense.amount}", style=self.input_Pack, min=0, max=1000000, step=1 )
             amount_input_label_with_icon_box.add(amount_input_icon_widget)
             amount_input_label_with_icon_box.add(amount_input_label)
             amount_input_label_with_icon_box.add(amount_input)
@@ -418,7 +521,7 @@ class ExpenseController:
                 margin=(0, 5),
                 style=self.label_Pack
             )
-            saved_amount_input = toga.TextInput(value=f"{expense.savedamount}", style=self.input_Pack)
+            saved_amount_input = toga.NumberInput(value=f"{expense.savedamount}", style=self.input_Pack, min=0, max=1000000, step=1)
             saved_amount_input_label_with_icon_box.add(saved_amount_input_icon_widget)
             saved_amount_input_label_with_icon_box.add(saved_amount_input_label)
             saved_amount_input_label_with_icon_box.add(saved_amount_input)
@@ -434,7 +537,7 @@ class ExpenseController:
                 margin=(0, 5),
                 style=self.label_Pack
             )
-            settled_amount_input = toga.TextInput(value=f"{expense.settledamount}", style=self.input_Pack)
+            settled_amount_input = toga.NumberInput(value=f"{expense.settledamount}", style=self.input_Pack, min=0, max=1000000, step=1)
             settled_amount_input_label_with_icon_box.add(settled_amount_input_icon_widget)
             settled_amount_input_label_with_icon_box.add(settled_amount_input_label)
             settled_amount_input_label_with_icon_box.add(settled_amount_input)
@@ -490,7 +593,7 @@ class ExpenseController:
             date_input.value = expense.duedate
             due_date_input_label_with_icon_box.add(due_date_input_icon_widget)
             due_date_input_label_with_icon_box.add(due_date_input_label)
-            due_date_input_label_with_icon_box.add(due_date_value_input_label)
+            #due_date_input_label_with_icon_box.add(due_date_value_input_label)
             due_date_input_label_with_icon_box.add(date_input)
             expense_box.add(due_date_input_label_with_icon_box)
             ##########################################

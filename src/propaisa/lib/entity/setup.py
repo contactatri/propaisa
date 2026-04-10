@@ -83,6 +83,7 @@ class Setup:
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 description TEXT NOT NULL,
                 amount INTEGER NOT NULL,
+                record_date TIMESTAMP,
                 userid INTEGER NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY(userid) REFERENCES users(id)

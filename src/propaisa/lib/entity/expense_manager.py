@@ -5,7 +5,7 @@ import pandas as pd
 from typing import Dict, Any, ClassVar
 from typing import List, Optional
 from lib.entity.sqlitemanager import SQLiteManager 
-from lib.entity.expense import Expense, Interest
+from lib.entity.expense import Expense, MonthlyExpense, MonthlyIncome, Interest, Income
 
 # Define color codes as constants
 class Colors:
@@ -24,8 +24,12 @@ class ExpenseManager:
         self.userid = userid  # For demo purpose, assuming single user with userid = 1
         self.expenses = []
         self.get_expenses()
-        #self.create_expense_category("Fashion", "Clothing, accessories, and related items")
+        #self.create_expense_category("Business Expense", "Cost of raw materials, cash flow etc.")
         #self.get_interest_trends()
+        #self.drop_table("user_income")
+        #self.create_table(user_income_table_schema)
+        #self.get_income_trends()
+        #self.get_expense_trends()
     def get_expenses_as_dataframe(self) -> pd.DataFrame:
         try:
             # Connect to the database and use the connection as a context manager
@@ -49,6 +53,60 @@ class ExpenseManager:
         except sqlite3.Error as e:
             print(f"A database error occurred: {e}")
             return pd.DataFrame()  # Return an empty DataFrame in case of error
+    def get_income_trends(self) -> List[MonthlyIncome]:
+        list_income_trends=[]
+        try:
+            with SQLiteManager(self.db_file) as db:
+                query = """
+                SELECT strftime('%Y-%m', record_date) AS year_month, 
+                       SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END) AS total_income
+                FROM user_income
+                WHERE userid = ?
+                GROUP BY year_month
+                ORDER BY year_month
+                """
+                rows = db.fetch_all(query, (self.userid,))  
+                if rows:                
+                    for row in rows:
+                        new_trend = MonthlyIncome(row[0], row[1])
+                        list_income_trends.append(new_trend)
+                    # Using map() with a lambda function
+                    list_income_trends_map = list(map(lambda trend_obj: f"{trend_obj.period} | Income: {str(trend_obj.total_income)}", list_income_trends))
+                    print(f"User_Income_Trends: {list_income_trends_map}")
+                else:
+                    print(f"No records found.")
+                
+            return list_income_trends
+        except sqlite3.Error as e:
+            print(f"A database error occurred: {e}")
+            return []
+    def get_expense_trends(self) -> List[MonthlyExpense]:
+        list_expense_trends=[]
+        try:
+            with SQLiteManager(self.db_file) as db:
+                query = """
+                SELECT strftime('%Y-%m', duedate) AS year_month, 
+                       SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END) AS total_expense
+                FROM user_expense
+                WHERE userid = ?
+                GROUP BY year_month
+                ORDER BY year_month
+                """
+                rows = db.fetch_all(query, (self.userid,))  
+                if rows:                
+                    for row in rows:
+                        new_trend = MonthlyExpense(row[0], row[1])
+                        list_expense_trends.append(new_trend)
+                    # Using map() with a lambda function
+                    list_expense_trends_map = list(map(lambda trend_obj: f"{trend_obj.period} | Expense: {str(trend_obj.total_expense)}", list_expense_trends))
+                    print(f"User_Expense_Trends: {list_expense_trends_map}")
+                else:
+                    print(f"No records found.")
+            return list_expense_trends
+        except sqlite3.Error as e:
+            print(f"A database error occurred: {e}")
+            return []
+
     def get_interest_trends(self) -> List[Interest]:
         list_interest=[]
         try:
@@ -68,6 +126,27 @@ class ExpenseManager:
                     print(f"No records found.")
             #print(f"Loaded {len(self.expenses)} expenses for user ID {self.userid}")
             return list_interest
+        except sqlite3.Error as e:
+            print(f"A database error occurred: {e}")
+            return []
+    def get_incomes(self) -> List[Income]:
+        list_income=[]
+        try:
+            with SQLiteManager(self.db_file) as db:
+                query = "SELECT record_date, amount, description FROM user_income WHERE userid = ? ORDER BY record_date "
+                rows = db.fetch_all(query, (self.userid,))  
+                # Define the format string matching the SQLite string format
+                format_string = '%Y-%m-%d %H:%M:%S'
+                if rows:                
+                    for row in rows:
+                        new_income = Income(datetime.strptime(row[0], format_string), row[1], row[2])
+                        list_income.append(new_income)
+                    # Using map() with a lambda function
+                    income_list_map = list(map(lambda income_obj: f"{income_obj.record_date} | {str(income_obj.amount)} | {income_obj.description}", list_income))
+                    print(f"User_Incomes: {income_list_map}")
+                else:
+                    print(f"No records found.")
+            return list_income
         except sqlite3.Error as e:
             print(f"A database error occurred: {e}")
             return []
@@ -133,15 +212,15 @@ class ExpenseManager:
 
         except sqlite3.Error as e:
             print(f"A database error occurred: {e}")
-    def create_income(self, amount:int, record_date: datetime, user_id:int=1):
+    def create_income(self, amount:int, record_date: datetime, description: str, user_id:int=1):
         try:
             # Connect to the database and use the connection as a context manager
             with SQLiteManager(self.db_file) as db:
                 query = """
-                INSERT INTO user_income (amount,record_date, userid)
+                INSERT INTO user_income (amount,record_date,description, userid)
                 VALUES (?, ?, ?, ?)
                 """
-                db.insert_data(query, (amount, record_date,user_id))
+                db.insert_data(query, (amount, record_date, description, user_id))
 
         except sqlite3.Error as e:
             print(f"A database error occurred: {e}")
