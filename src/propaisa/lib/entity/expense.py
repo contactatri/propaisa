@@ -1,8 +1,13 @@
+import os
+from dotenv import load_dotenv
 from datetime import datetime
 import pandas as pd
 from typing import Dict, Any, ClassVar
 from typing import List, Optional
 from lib.entity.sqlitemanager import SQLiteManager 
+load_dotenv()  # Searches for a .env file in the current directory
+
+
 class Nudge:
     def __init__(self, id, name, nudgedate, message, type, sentiment, status=0):
         self.id = id
@@ -64,20 +69,25 @@ class Expense:
     def set_projected_yearly_interest(self):
         self.projected_yearly_interest = round(self.gapamount * 0.24)
     def set_nudges(self):
+        #print(f"Threshold for projected interest: {os.getenv("THRESHOLD_PROJECTED_INTEREST")}")
+        #print(f"Threshold for daily saving amount: {os.getenv("THRESHOLD_SAVING_AMOUNT_FOR_EXPENSES")}")
+        #print(f"Threshold for due days: {os.getenv("THRESHOLD_DAYS_FOR_EXPENSES")}")
+        #print(f"Threshold for gap to amount ratio: {os.getenv("THRESHOLD_GAP_TO_AMOUNT")}")
+        
         if self.gapamount > 0:
-            if self.due_days <=7:
+            if self.due_days <=int(os.getenv("THRESHOLD_DAYS_FOR_EXPENSES")):
                 nudge_message=f"Your expense '{self.name}' is due in {self.due_days} days. Please ensure you have saved enough to cover the amount of {self.gapamount}."
                 nudge=Nudge(0, f"Nudge for {self.name}", {pd.Timestamp.now().to_pydatetime()}, nudge_message, "Due Date Nudge",-1, 0)
                 self.nudges.append(nudge)
-            if self.daily_saving_amount > 100:
+            if self.daily_saving_amount > int(os.getenv("THRESHOLD_SAVING_AMOUNT_FOR_EXPENSES")):
                 nudge_message=f"Your daily saving amount for expense '{self.name}' is {self.daily_saving_amount:.2f}. Consider adjusting your savings plan."
                 nudge=Nudge(0, f"Nudge for {self.name}", pd.Timestamp.now().to_pydatetime(), nudge_message, "High Daily Saving Nudge",0, 0)
                 self.nudges.append(nudge)
-            if self.projected_yearly_interest > 500:
+            if self.projected_yearly_interest > int(os.getenv("THRESHOLD_PROJECTED_INTEREST")):
                 nudge_message=f"Your projected yearly interest for expense '{self.name}' is {self.projected_yearly_interest:.2f}. Look for better saving options."
                 nudge=Nudge(0, f"Nudge for {self.name}", pd.Timestamp.now().to_pydatetime(), nudge_message, "High Interest Nudge",-1, 0)
                 self.nudges.append(nudge)
-            if (self.gapamount/self.amount) < 0.2:
+            if (self.gapamount/self.amount) < float(os.getenv("THRESHOLD_GAP_TO_AMOUNT")):
                 nudge_message=f"Your have amlost reached the goal for '{self.name}' is {self.projected_yearly_interest:.2f}. Great work. You have saved lot on possible interest."
                 nudge=Nudge(0, f"Nudge for {self.name}", pd.Timestamp.now().to_pydatetime(), nudge_message, "High Interest Nudge",1, 0)
                 self.nudges.append(nudge)

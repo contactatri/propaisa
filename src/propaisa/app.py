@@ -1,6 +1,8 @@
 """
 This app helps daily wage workers manage their income and expenditure, guiding them towards financial independence.
 """
+import os
+from dotenv import load_dotenv
 from functools import partial
 import sys
 import subprocess
@@ -12,7 +14,7 @@ from toga.style import Pack
 from toga.style.pack import COLUMN, ROW
 from lib.ui.togahelper import TogaHelper
 from lib.ui.logincontroller import LoginController
-  
+load_dotenv()  # Searches for a .env file in the current directory
 
 class propaisa(toga.App):
     def startup(self):
@@ -26,7 +28,7 @@ class propaisa(toga.App):
         # Add header box from HeaderHelper
         #header_helper = HeaderHelper(self)
         # Initialize helper and pass 'self' (the app)
-
+        #print(f"Threshold for projected interest: {os.getenv("THRESHOLD_PROJECTED_INTEREST")}")
         self.userid=-1
         self.script_dir = Path(__file__).parent.absolute()
         self.icons_dir = f"{str(self.script_dir).replace('\\', '/')}/icons"

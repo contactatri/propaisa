@@ -1,3 +1,5 @@
+import os
+from dotenv import load_dotenv
 import sqlite3
 from datetime import datetime
 import traceback
@@ -6,7 +8,7 @@ from typing import Dict, Any, ClassVar
 from typing import List, Optional
 from lib.entity.sqlitemanager import SQLiteManager 
 from lib.entity.expense import Expense, MonthlyExpense, MonthlyIncome, Interest, Income
-
+load_dotenv()  # Searches for a .env file in the current directory
 # Define color codes as constants
 class Colors:
     RED = '\033[91m'
@@ -30,6 +32,7 @@ class ExpenseManager:
         #self.create_table(user_income_table_schema)
         #self.get_income_trends()
         #self.get_expense_trends()
+        print(f"Connecting to: {os.getenv("DATABASE_URL")}")
     def get_expenses_as_dataframe(self) -> pd.DataFrame:
         try:
             # Connect to the database and use the connection as a context manager
