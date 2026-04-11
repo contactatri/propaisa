@@ -15,7 +15,20 @@ class LoginController:
         self.toga_helper = TogaHelper(app)
     
     def pre_login_screen(self):
-        return_box=toga.Box(direction=ROW, margin=5)
+        return_box=toga.Box(direction=COLUMN)
+        self.webview = toga.WebView(style=Pack(flex=1))
+        html_path = f"{self.app.script_dir}\T&C.html"
+        print(f"Loading HTML content from: {html_path}")
+        #self.webview.url = f"file://{html_path}"
+        try:
+            with open(html_path, "r", encoding="utf-8") as f:
+                html_content = f.read()
+            
+            # Load the content into the WebView
+            self.webview.set_content("http://localhost", html_content)
+        except Exception as e:
+            self.webview.set_content("http://localhost", f"<html><body>Error loading file: {e}</body></html>")
+        '''
         name_label = toga.Label(
             "Your name: ",
             margin=(0, 5),
@@ -24,21 +37,23 @@ class LoginController:
             "Your Password: ",
             margin=(0, 5),
         )
-        self.name_input = toga.TextInput(style=Pack(padding_top=1))
-        self.password_inp = toga.PasswordInput(style=Pack(padding_top=1)) # Use toga.PasswordInput
-        login_box = toga.Box(direction=ROW, margin=5)
-        login_box.add(name_label)
-        login_box.add(self.name_input)
-        login_box.add(password_label)
-        login_box.add(self.password_inp)
+        '''
+        #self.name_input = toga.TextInput(style=Pack(padding_top=1))
+        #self.password_inp = toga.PasswordInput(style=Pack(padding_top=1)) # Use toga.PasswordInput
+        #login_box = toga.Box(direction=ROW, margin=5)
+        #login_box.add(self.webview)
+        #login_box.add(name_label)
+        #login_box.add(self.name_input)
+        #login_box.add(password_label)
+        #login_box.add(self.password_inp)
 
         button = toga.Button(
-            "Login",
+            "I Agree",
             #on_press=partial(self.toga_helper.show_alert, message_str="Hello from helper"),
             on_press=partial(self.login_action),
             margin=5,
         )
-        return_box.add(login_box)
+        return_box.add(self.webview)
         return_box.add(button)
         return return_box
     
